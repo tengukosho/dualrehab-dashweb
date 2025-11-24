@@ -8,17 +8,10 @@ import Videos from './pages/Videos';
 import Users from './pages/Users';
 import Categories from './pages/Categories';
 import Messages from './pages/Messages';
+import Sidebar from './components/Sidebar';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const queryClient = new QueryClient();
-
-const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth();
-  
-  if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
-  if (!user) return <Navigate to="/login" />;
-  
-  return children;
-};
 
 function AppRoutes() {
   return (
@@ -41,13 +34,73 @@ function AppRoutes() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </AuthProvider>
-    </QueryClientProvider>
+    <BrowserRouter>
+      <Routes>
+        {/* Public route - Login */}
+        <Route path="/login" element={<Login />} />
+
+        {/* Protected routes with layout */}
+        <Route
+          path="/*"
+          element={
+            <div className="flex h-screen bg-gray-50">
+              <Sidebar />
+              <Routes>
+                {/* Dashboard - ADMIN ONLY */}
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute requireAdmin={true}>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Videos - All authenticated users */}
+                <Route
+                  path="/videos"
+                  element={
+                    <ProtectedRoute>
+                      <Videos />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Categories - All authenticated users */}
+                <Route
+                  path="/categories"
+                  element={
+                    <ProtectedRoute>
+                      <Categories />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Users - All authenticated users */}
+                <Route
+                  path="/users"
+                  element={
+                    <ProtectedRoute>
+                      <Users />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Messages - All authenticated users */}
+                <Route
+                  path="/messages"
+                  element={
+                    <ProtectedRoute>
+                      <Messages />
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+            </div>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
