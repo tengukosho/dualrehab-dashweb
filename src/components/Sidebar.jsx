@@ -6,7 +6,9 @@ import {
   Users,
   Grid,
   MessageSquare,
-  LogOut
+  LogOut,
+  BarChart3,
+  FileText
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -50,16 +52,18 @@ export default function Sidebar() {
     return location.pathname === path;
   };
 
-  // Admin gets full access
+  // Admin gets full access including Dashboard, Analytics, and Reports
   const adminMenuItems = [
     { path: '/', icon: Home, label: 'Dashboard' },
     { path: '/videos', icon: Video, label: 'Videos' },
     { path: '/categories', icon: Grid, label: 'Categories' },
     { path: '/users', icon: Users, label: 'Users' },
     { path: '/messages', icon: MessageSquare, label: 'Messages' },
+    { path: '/analytics', icon: BarChart3, label: 'Analytics' },
+    { path: '/reports', icon: FileText, label: 'Reports' },
   ];
 
-  // Expert gets limited access (no Dashboard)
+  // Expert gets limited access (NO Dashboard, NO Analytics, NO Reports)
   const expertMenuItems = [
     { path: '/videos', icon: Video, label: 'Videos' },
     { path: '/categories', icon: Grid, label: 'Categories' },
@@ -74,6 +78,9 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="p-6 border-b border-gray-200">
         <h1 className="text-2xl font-bold text-blue-600">Rehab Admin</h1>
+        <p className="text-xs text-gray-500 mt-1">
+          {currentUser?.role === 'admin' ? 'Administrator Portal' : 'Expert Portal'}
+        </p>
       </div>
 
       {/* Navigation */}

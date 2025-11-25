@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Send, MessageSquare, Trash2, User, ArrowRight, ArrowLeft } from 'lucide-react';
 
 export default function Messages() {
+  const location = useLocation();
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -27,6 +29,32 @@ export default function Messages() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Handle pre-selected user from navigation (from Users page)
+  useEffect(() => {
+    if (location.state?.selectedUser && currentUser) {
+      const user = location.state.selectedUser;
+      
+      // Create or find conversation with this user
+      const existingConv = conversations.find(c => c.userId === user.id);
+      
+      if (existingConv) {
+        handleSelectConversation(existingConv);
+      } else {
+        // Create new conversation object
+        const newConv = {
+          userId: user.id,
+          userName: user.name,
+          userRole: user.role,
+          lastMessage: 'Start a new conversation',
+          timestamp: new Date().toISOString(),
+          unread: 0
+        };
+        setSelectedConversation(newConv);
+        setMessages([]);
+      }
+    }
+  }, [location.state, currentUser, conversations]);
 
   const fetchCurrentUser = async () => {
     try {
@@ -59,7 +87,6 @@ export default function Messages() {
         const otherId = msg.senderId === currentUser?.id ? msg.receiverId : msg.senderId;
         const otherUser = msg.senderId === currentUser?.id ? msg.receiver : msg.sender;
         
-        // Skip if the other user is the current user (don't show conversations with self)
         if (otherId === currentUser?.id) {
           return;
         }
@@ -111,6 +138,7 @@ export default function Messages() {
       setMessages(data);
     } catch (error) {
       console.error('Error fetching messages:', error);
+      setMessages([]);
     }
   };
 
@@ -281,9 +309,9 @@ export default function Messages() {
         {/* Messages Interface */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="grid grid-cols-12 h-[600px]">
-            {/* Conversations List - hidden on mobile when conversation selected */}
-            <div className={`${selectedConversation ? 'hidden md:block md:col-span-4' : 'col-span-12 md:col-span-4'} border-r border-gray-200 overflow-y-auto`}>
-              <div className="p-4 border-b border-gray-200 bg-gray-50">
+            {/* Conversations List */}
+            <div className={`${selectedConversation ? 'hidden md:flex md:col-span-4' : 'col-span-12 md:col-span-4 flex'} flex-col border-r border-gray-200 h-full`}>
+              <div className="flex-shrink-0 p-4 border-b border-gray-200 bg-gray-50">
                 <input
                   type="text"
                   placeholder="Search conversations..."
@@ -291,61 +319,62 @@ export default function Messages() {
                 />
               </div>
 
-              <div className="divide-y divide-gray-200">
-                {conversations.map((conv) => (
-                  <button
-                    key={conv.userId}
-                    onClick={() => handleSelectConversation(conv)}
-                    className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
-                      selectedConversation?.userId === conv.userId ? 'bg-blue-50' : ''
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-semibold text-gray-900 truncate">
-                            {conv.userName}
+              <div className="flex-1 overflow-y-auto">
+                <div className="divide-y divide-gray-200">
+                  {conversations.map((conv) => (
+                    <button
+                      key={conv.userId}
+                      onClick={() => handleSelectConversation(conv)}
+                      className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
+                        selectedConversation?.userId === conv.userId ? 'bg-blue-50' : ''
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-semibold text-gray-900 truncate">
+                              {conv.userName}
+                            </p>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(conv.userRole)}`}>
+                              {getRoleLabel(conv.userRole)}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 truncate">
+                            {conv.lastMessage}
                           </p>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(conv.userRole)}`}>
-                            {getRoleLabel(conv.userRole)}
-                          </span>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {new Date(conv.timestamp).toLocaleString()}
+                          </p>
                         </div>
-                        <p className="text-sm text-gray-600 truncate">
-                          {conv.lastMessage}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {new Date(conv.timestamp).toLocaleString()}
-                        </p>
+                        {conv.unread > 0 && (
+                          <span className="ml-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                            {conv.unread}
+                          </span>
+                        )}
                       </div>
-                      {conv.unread > 0 && (
-                        <span className="ml-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full">
-                          {conv.unread}
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  ))}
 
-                {conversations.length === 0 && (
-                  <div className="p-8 text-center text-gray-500">
-                    <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-                    <p>No conversations yet</p>
-                  </div>
-                )}
+                  {conversations.length === 0 && (
+                    <div className="p-8 text-center text-gray-500">
+                      <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                      <p>No conversations yet</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Messages Area */}
-            <div className={`${selectedConversation ? 'col-span-12 md:col-span-8' : 'col-span-8'} flex flex-col`}>
+            <div className={`${selectedConversation ? 'col-span-12 md:col-span-8' : 'col-span-8'} flex flex-col h-full overflow-hidden`}>
               {selectedConversation ? (
-                <>
+                <div className="flex flex-col h-full">
                   {/* Chat Header */}
-                  <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                  <div className="flex-shrink-0 p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <button
                         onClick={handleBackToList}
-                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors bg-gray-100"
-                        title="Back to conversations"
+                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors bg-white border border-gray-300 shadow-sm md:hidden"
                       >
                         <ArrowLeft className="w-5 h-5 text-gray-700" />
                       </button>
@@ -358,9 +387,6 @@ export default function Messages() {
                             {getRoleLabel(selectedConversation.userRole)}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600">
-                          User ID: {selectedConversation.userId}
-                        </p>
                       </div>
                     </div>
                     <button
@@ -373,13 +399,20 @@ export default function Messages() {
                   </div>
 
                   {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 min-h-0">
+                    {messages.length === 0 && (
+                      <div className="text-center text-gray-500 py-8">
+                        <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                        <p>No messages yet. Start the conversation!</p>
+                      </div>
+                    )}
+                    
                     {messages.map((msg) => {
                       const isCurrentUser = msg.senderId === currentUser?.id;
                       const senderName = isCurrentUser ? 'You' : (msg.sender?.name || 'Unknown');
                       const receiverName = isCurrentUser ? (selectedConversation.userName || 'Unknown') : 'You';
                       const displayRole = isCurrentUser 
-                        ? (selectedConversation.userRole || 'patient')
+                        ? (currentUser?.role || 'user')
                         : (msg.sender?.role || 'patient');
                       
                       return (
@@ -388,7 +421,6 @@ export default function Messages() {
                           className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} group`}
                         >
                           <div className={`max-w-[70%] ${isCurrentUser ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
-                            {/* Sender/Target Label */}
                             <div className="flex items-center gap-2 px-2">
                               <span className={`text-xs font-medium ${
                                 isCurrentUser ? 'text-blue-600' : 'text-green-600'
@@ -406,7 +438,6 @@ export default function Messages() {
                               </span>
                             </div>
 
-                            {/* Message Bubble */}
                             <div className="flex items-end gap-2">
                               <div
                                 className={`rounded-lg px-4 py-2 ${
@@ -425,7 +456,6 @@ export default function Messages() {
                                 </p>
                               </div>
                               
-                              {/* Delete Button */}
                               <button
                                 onClick={() => handleDeleteMessage(msg.id)}
                                 className="opacity-0 group-hover:opacity-100 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
@@ -442,7 +472,7 @@ export default function Messages() {
                   </div>
 
                   {/* Message Input */}
-                  <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200 bg-white">
+                  <form onSubmit={handleSendMessage} className="flex-shrink-0 p-4 border-t border-gray-200 bg-white">
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -457,11 +487,11 @@ export default function Messages() {
                         className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                       >
                         <Send className="w-5 h-5" />
-                        Send
+                        <span className="hidden sm:inline">Send</span>
                       </button>
                     </div>
                   </form>
-                </>
+                </div>
               ) : (
                 <div className="flex-1 flex items-center justify-center text-gray-500">
                   <div className="text-center">

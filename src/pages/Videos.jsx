@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Video, Plus, Edit2, Trash2, Search, Filter } from 'lucide-react';
+import { Video, Plus, Edit2, Trash2, Search, X, Upload } from 'lucide-react';
 import api from '../services/api';
-import UploadModal from '../components/videos/UploadModal';
 
 export default function Videos() {
   const [videos, setVideos] = useState([]);
@@ -14,6 +13,7 @@ export default function Videos() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     loadVideos();
@@ -27,6 +27,7 @@ export default function Videos() {
       setVideos(response.data.videos || response.data);
     } catch (error) {
       console.error('Failed to load videos:', error);
+      alert('Failed to load videos: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -47,6 +48,7 @@ export default function Videos() {
     try {
       await api.delete(`/videos/${id}`);
       await loadVideos();
+      alert('Video deleted successfully!');
     } catch (error) {
       alert('Failed to delete video: ' + error.message);
     }
@@ -76,8 +78,30 @@ export default function Videos() {
       await loadVideos();
       setShowEditModal(false);
       setEditingVideo(null);
+      alert('Video updated successfully!');
     } catch (error) {
       alert('Failed to update video: ' + error.message);
+    }
+  };
+
+  const handleUpload = async (e) => {
+    e.preventDefault();
+    setUploading(true);
+    
+    const formData = new FormData(e.target);
+    
+    try {
+      await api.post('/videos', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      await loadVideos();
+      setShowUploadModal(false);
+      alert('Video uploaded successfully!');
+      e.target.reset();
+    } catch (error) {
+      alert('Failed to upload video: ' + (error.response?.data?.error || error.message));
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -340,21 +364,185 @@ export default function Videos() {
 
         {/* Upload Modal */}
         {showUploadModal && (
-          <UploadModal
-            categories={categories}
-            onClose={() => setShowUploadModal(false)}
-            onSuccess={() => {
-              setShowUploadModal(false);
-              loadVideos();
-            }}
-          />
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Upload Video</h3>
+                <button
+                  onClick={() => setShowUploadModal(false)}
+                  disabled={uploading}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleUpload} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Video File *
+                  </label>
+                  <input
+                    type="file"
+                    name="video"
+                    accept="video/*"
+                    required
+                    disabled={uploading}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Thumbnail (optional)
+                  </label>
+                  <input
+                    type="file"
+                    name="thumbnail"
+                    accept="image/*"
+                    disabled={uploading}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Title *
+                  </label>
+                  <input
+                    type="text"
+                    name="title"
+                    required
+                    disabled={uploading}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., Upper Body Stretching"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    rows={3}
+                    disabled={uploading}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Brief description of the exercise..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Category *
+                    </label>
+                    <select
+                      name="categoryId"
+                      required
+                      disabled={uploading}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select category</option>
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Difficulty *
+                    </label>
+                    <select
+                      name="difficultyLevel"
+                      required
+                      disabled={uploading}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="beginner">Beginner</option>
+                      <option value="intermediate">Intermediate</option>
+                      <option value="advanced">Advanced</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Duration (seconds) *
+                  </label>
+                  <input
+                    type="number"
+                    name="duration"
+                    required
+                    min="1"
+                    disabled={uploading}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., 300 (5 minutes)"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Instructions
+                  </label>
+                  <textarea
+                    name="instructions"
+                    rows={4}
+                    disabled={uploading}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Step-by-step instructions..."
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setShowUploadModal(false)}
+                    disabled={uploading}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={uploading}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {uploading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4" />
+                        Upload Video
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         )}
 
         {/* Edit Modal */}
         {showEditModal && editingVideo && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Video</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Edit Video</h3>
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingVideo(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
               
               <form onSubmit={handleUpdateVideo} className="space-y-4">
                 <div>

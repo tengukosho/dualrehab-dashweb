@@ -78,7 +78,7 @@ export default function Dashboard() {
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-600">System-wide overview • All users</p>
+        <p className="mt-1 text-sm text-gray-600">System-wide overview â€¢ All users</p>
       </div>
       
       {/* Main Stats Grid */}
@@ -206,14 +206,14 @@ export default function Dashboard() {
         <div className="text-sm text-gray-600">
           {totalCompletions > 0 ? (
             <div className="space-y-2">
-              <p>✓ <span className="font-semibold">{totalCompletions}</span> total exercises completed by all patients</p>
-              <p>✓ <span className="font-semibold">{completionsLast7Days}</span> completions in the last 7 days</p>
-              <p>✓ <span className="font-semibold">{completionsLast30Days}</span> completions in the last 30 days</p>
-              <p>✓ <span className="font-semibold">{upcomingSchedules}</span> upcoming scheduled exercises across all patients</p>
-              <p>✓ <span className="font-semibold">{totalUsers}</span> registered patients using the platform</p>
+              <p>âœ“ <span className="font-semibold">{totalCompletions}</span> total exercises completed by all patients</p>
+              <p>âœ“ <span className="font-semibold">{completionsLast7Days}</span> completions in the last 7 days</p>
+              <p>âœ“ <span className="font-semibold">{completionsLast30Days}</span> completions in the last 30 days</p>
+              <p>âœ“ <span className="font-semibold">{upcomingSchedules}</span> upcoming scheduled exercises across all patients</p>
+              <p>âœ“ <span className="font-semibold">{totalUsers}</span> registered patients using the platform</p>
               {completionsLast7Days > 20 && (
                 <p className="mt-3 font-semibold text-green-600">
-                  🔥 High engagement! Platform is actively being used.
+                  ðŸ”¥ High engagement! Platform is actively being used.
                 </p>
               )}
             </div>

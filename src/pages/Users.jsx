@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   User,
   Mail,
@@ -7,11 +8,13 @@ import {
   Edit,
   Trash2,
   X,
-  Save
+  Save,
+  MessageSquare
 } from 'lucide-react';
 
 export default function Users() {
   const [users, setUsers] = useState([]);
+  const [experts, setExperts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -23,6 +26,7 @@ export default function Users() {
     hospital: '',
     assignedExpertId: ''
   });
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchCurrentUser();
@@ -54,7 +58,12 @@ export default function Users() {
         }
       });
       const data = await response.json();
-      setUsers(data.users || []);
+      const allUsers = data.users || [];
+      setUsers(allUsers);
+      
+      // Extract experts for the dropdown
+      const expertsList = allUsers.filter(u => u.role === 'expert');
+      setExperts(expertsList);
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -145,6 +154,11 @@ export default function Users() {
     }
   };
 
+  const handleMessageUser = (user) => {
+    // Navigate to messages page with the user pre-selected
+    navigate('/messages', { state: { selectedUser: user } });
+  };
+
   const getRoleBadgeColor = (role) => {
     switch (role) {
       case 'admin':
@@ -165,6 +179,12 @@ export default function Users() {
       case 'patient': return 'Patient';
       default: return role;
     }
+  };
+
+  const getExpertName = (expertId) => {
+    if (!expertId) return '-';
+    const expert = users.find(u => u.id === expertId);
+    return expert ? expert.name : `Expert #${expertId}`;
   };
 
   if (loading) {
@@ -308,10 +328,17 @@ export default function Users() {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    {user.assignedExpertId ? `Expert #${user.assignedExpertId}` : '-'}
+                    {getExpertName(user.assignedExpertId)}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => handleMessageUser(user)}
+                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                        title="Send message"
+                      >
+                        <MessageSquare className="w-5 h-5" />
+                      </button>
                       <button
                         onClick={() => handleEditClick(user)}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -404,17 +431,22 @@ export default function Users() {
                 {selectedUser?.role === 'patient' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Assign Expert (Expert ID)
+                      Assign Expert
                     </label>
-                    <input
-                      type="number"
+                    <select
                       value={editForm.assignedExpertId}
                       onChange={(e) => setEditForm({ ...editForm, assignedExpertId: e.target.value })}
-                      placeholder="Enter expert user ID"
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                    />
+                    >
+                      <option value="">No expert assigned</option>
+                      {experts.map(expert => (
+                        <option key={expert.id} value={expert.id}>
+                          {expert.name} ({expert.email})
+                        </option>
+                      ))}
+                    </select>
                     <p className="text-sm text-gray-500 mt-1">
-                      Leave empty to unassign expert
+                      Select an expert to assign to this patient
                     </p>
                   </div>
                 )}

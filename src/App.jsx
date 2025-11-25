@@ -1,106 +1,121 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider, useAuth } from './lib/AuthContext';
-import Layout from './components/layout/Layout';
+import { AuthProvider } from './lib/AuthContext';
+import Sidebar from './components/Sidebar';
+import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Videos from './pages/Videos';
 import Users from './pages/Users';
 import Categories from './pages/Categories';
 import Messages from './pages/Messages';
-import Sidebar from './components/Sidebar';
-import ProtectedRoute from './components/ProtectedRoute';
+import Analytics from './pages/Analytics';
+import Reports from './pages/Reports';
 
-const queryClient = new QueryClient();
-
-function AppRoutes() {
-  return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/" element={
-        <ProtectedRoute>
-          <Layout />
-        </ProtectedRoute>
-      }>
-        <Route index element={<Dashboard />} />
-        <Route path="videos" element={<Videos />} />
-        <Route path="users" element={<Users />} />
-        <Route path="categories" element={<Categories />} />
-        <Route path="messages" element={<Messages />} />
-      </Route>
-    </Routes>
-  );
-}
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public route - Login */}
-        <Route path="/login" element={<Login />} />
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public route - Login */}
+            <Route path="/login" element={<Login />} />
 
-        {/* Protected routes with layout */}
-        <Route
-          path="/*"
-          element={
-            <div className="flex h-screen bg-gray-50">
-              <Sidebar />
-              <Routes>
-                {/* Dashboard - ADMIN ONLY */}
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute requireAdmin={true}>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  }
-                />
+            {/* Protected routes with layout */}
+            <Route
+              path="/*"
+              element={
+                <div className="flex h-screen bg-gray-50">
+                  <Sidebar />
+                  <div className="flex-1 overflow-auto">
+                    <Routes>
+                      {/* Dashboard - ADMIN ONLY */}
+                      <Route
+                        path="/"
+                        element={
+                          <ProtectedRoute requireAdmin={true}>
+                            <Dashboard />
+                          </ProtectedRoute>
+                        }
+                      />
 
-                {/* Videos - All authenticated users */}
-                <Route
-                  path="/videos"
-                  element={
-                    <ProtectedRoute>
-                      <Videos />
-                    </ProtectedRoute>
-                  }
-                />
+                      {/* Videos - All authenticated users */}
+                      <Route
+                        path="/videos"
+                        element={
+                          <ProtectedRoute>
+                            <Videos />
+                          </ProtectedRoute>
+                        }
+                      />
 
-                {/* Categories - All authenticated users */}
-                <Route
-                  path="/categories"
-                  element={
-                    <ProtectedRoute>
-                      <Categories />
-                    </ProtectedRoute>
-                  }
-                />
+                      {/* Categories - All authenticated users */}
+                      <Route
+                        path="/categories"
+                        element={
+                          <ProtectedRoute>
+                            <Categories />
+                          </ProtectedRoute>
+                        }
+                      />
 
-                {/* Users - All authenticated users */}
-                <Route
-                  path="/users"
-                  element={
-                    <ProtectedRoute>
-                      <Users />
-                    </ProtectedRoute>
-                  }
-                />
+                      {/* Users - All authenticated users */}
+                      <Route
+                        path="/users"
+                        element={
+                          <ProtectedRoute>
+                            <Users />
+                          </ProtectedRoute>
+                        }
+                      />
 
-                {/* Messages - All authenticated users */}
-                <Route
-                  path="/messages"
-                  element={
-                    <ProtectedRoute>
-                      <Messages />
-                    </ProtectedRoute>
-                  }
-                />
-              </Routes>
-            </div>
-          }
-        />
-      </Routes>
-    </BrowserRouter>
+                      {/* Messages - All authenticated users */}
+                      <Route
+                        path="/messages"
+                        element={
+                          <ProtectedRoute>
+                            <Messages />
+                          </ProtectedRoute>
+                        }
+                      />
+
+                      {/* Analytics - ADMIN/EXPERT ONLY */}
+                      <Route
+                        path="/analytics"
+                        element={
+                          <ProtectedRoute requireAdmin={true}>
+                            <Analytics />
+                          </ProtectedRoute>
+                        }
+                      />
+
+                      {/* Reports - ADMIN/EXPERT ONLY */}
+                      <Route
+                        path="/reports"
+                        element={
+                          <ProtectedRoute requireAdmin={true}>
+                            <Reports />
+                          </ProtectedRoute>
+                        }
+                      />
+                    </Routes>
+                  </div>
+                </div>
+              }
+            />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 
