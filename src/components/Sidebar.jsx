@@ -8,19 +8,22 @@ import {
   MessageSquare,
   LogOut,
   BarChart3,
-  FileText
+  FileText,
+  Moon,
+  Sun
 } from 'lucide-react';
+import { useDarkMode } from './DarkModeProvider';
 
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
+  const { isDark, setIsDark } = useDarkMode();
 
   useEffect(() => {
     fetchCurrentUser();
   }, []);
 
-  // Redirect expert away from dashboard
   useEffect(() => {
     if (currentUser?.role === 'expert' && location.pathname === '/') {
       navigate('/videos');
@@ -52,7 +55,6 @@ export default function Sidebar() {
     return location.pathname === path;
   };
 
-  // Admin gets full access including Dashboard, Analytics, and Reports
   const adminMenuItems = [
     { path: '/', icon: Home, label: 'Dashboard' },
     { path: '/videos', icon: Video, label: 'Videos' },
@@ -63,7 +65,6 @@ export default function Sidebar() {
     { path: '/reports', icon: FileText, label: 'Reports' },
   ];
 
-  // Expert gets limited access (NO Dashboard, NO Analytics, NO Reports)
   const expertMenuItems = [
     { path: '/videos', icon: Video, label: 'Videos' },
     { path: '/categories', icon: Grid, label: 'Categories' },
@@ -74,11 +75,13 @@ export default function Sidebar() {
   const menuItems = currentUser?.role === 'admin' ? adminMenuItems : expertMenuItems;
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen">
+    <div className={`w-64 border-r flex flex-col h-screen ${
+      isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+    }`}>
       {/* Logo */}
-      <div className="p-6 border-b border-gray-200">
+      <div className={`p-6 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
         <h1 className="text-2xl font-bold text-blue-600">Rehab Admin</h1>
-        <p className="text-xs text-gray-500 mt-1">
+        <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
           {currentUser?.role === 'admin' ? 'Administrator Portal' : 'Expert Portal'}
         </p>
       </div>
@@ -93,42 +96,57 @@ export default function Sidebar() {
               to={item.path}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 isActive(item.path)
-                  ? 'bg-blue-50 text-blue-600 font-medium'
-                  : 'text-gray-700 hover:bg-gray-50'
+                  ? isDark
+                    ? 'bg-blue-900/50 text-blue-400 font-medium'
+                    : 'bg-blue-50 text-blue-600 font-medium'
+                  : isDark
+                    ? 'text-gray-300 hover:bg-gray-700'
+                    : 'text-gray-700 hover:bg-gray-50'
               }`}
             >
               <Icon className="w-5 h-5" />
-              <span>{item.label}</span>
+              <span className="text-sm">{item.label}</span>
             </Link>
           );
         })}
       </nav>
 
-      {/* User Info & Logout */}
-      <div className="p-4 border-t border-gray-200">
+      {/* User Info & Actions */}
+      <div className={`border-t p-4 ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
         {currentUser && (
-          <div className="mb-3 px-4 py-2 bg-gray-50 rounded-lg">
-            <p className="text-sm font-medium text-gray-900">
+          <div className="mb-3">
+            <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
               {currentUser.name}
             </p>
-            <div className="flex items-center gap-2 mt-1">
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                currentUser.role === 'admin' 
-                  ? 'bg-purple-100 text-purple-800'
-                  : 'bg-blue-100 text-blue-800'
-              }`}>
-                {currentUser.role === 'admin' ? 'Administrator' : 'Expert'}
-              </span>
-            </div>
+            <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              {currentUser.email}
+            </p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+              {currentUser.role}
+            </p>
           </div>
         )}
         
+        {/* Dark Mode Toggle */}
+        <button
+          onClick={() => setIsDark(!isDark)}
+          className={`flex items-center gap-3 w-full px-4 py-2 mb-2 rounded-lg transition-colors ${
+            isDark
+              ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+          }`}
+        >
+          {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          <span className="text-sm">{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+        </button>
+
+        {/* Logout */}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          className="flex items-center gap-3 w-full px-4 py-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
         >
           <LogOut className="w-5 h-5" />
-          <span>Logout</span>
+          <span className="text-sm font-medium">Logout</span>
         </button>
       </div>
     </div>

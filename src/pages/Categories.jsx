@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { FolderOpen, Plus, Edit2, Trash2, Video } from 'lucide-react';
 import api from '../services/api';
+import { useDarkMode } from '../components/DarkModeProvider';
 
 export default function Categories() {
+  const { isDark } = useDarkMode();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -84,20 +86,20 @@ export default function Categories() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className={`flex items-center justify-center h-64 ${isDark ? 'bg-gray-900' : ''}`}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 p-8 overflow-auto">
+    <div className={`flex-1 p-8 overflow-auto min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
-            <p className="text-gray-600 mt-1">Organize your rehabilitation videos by category</p>
+            <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Categories</h1>
+            <p className={`mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Organize your rehabilitation videos by category</p>
           </div>
           <button
             onClick={() => openModal()}
@@ -110,21 +112,21 @@ export default function Categories() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Categories</p>
-                <p className="text-2xl font-bold text-gray-900">{categories.length}</p>
+                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Total Categories</p>
+                <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{categories.length}</p>
               </div>
               <FolderOpen className="h-8 w-8 text-blue-600" />
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Videos</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Total Videos</p>
+                <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   {categories.reduce((sum, cat) => sum + (cat._count?.videos || 0), 0)}
                 </p>
               </div>
@@ -132,11 +134,11 @@ export default function Categories() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Average Videos/Category</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Average Videos/Category</p>
+                <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   {categories.length > 0 
                     ? Math.round(categories.reduce((sum, cat) => sum + (cat._count?.videos || 0), 0) / categories.length)
                     : 0
@@ -151,18 +153,18 @@ export default function Categories() {
         {/* Categories Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {categories.map((category) => (
-            <div key={category.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
+            <div key={category.id} className={`rounded-lg shadow hover:shadow-lg transition-shadow ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
               <div className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <FolderOpen className="h-5 w-5 text-blue-600" />
-                      <h3 className="text-lg font-semibold text-gray-900">{category.name}</h3>
+                      <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{category.name}</h3>
                     </div>
                     {category.description && (
-                      <p className="text-sm text-gray-600 mb-4">{category.description}</p>
+                      <p className={`text-sm mb-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{category.description}</p>
                     )}
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <div className={`flex items-center gap-4 text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
                       <div className="flex items-center gap-1">
                         <Video className="h-4 w-4" />
                         <span>{category._count?.videos || 0} videos</span>
@@ -174,17 +176,21 @@ export default function Categories() {
                   </div>
                 </div>
                 
-                <div className="flex gap-2 mt-4 pt-4 border-t border-gray-200">
+                <div className={`flex gap-2 mt-4 pt-4 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
                   <button
                     onClick={() => openModal(category)}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                    className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 border rounded-lg transition-colors ${
+                      isDark 
+                        ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
                   >
                     <Edit2 className="h-4 w-4" />
                     Edit
                   </button>
                   <button
                     onClick={() => handleDelete(category.id)}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-red-600 hover:bg-red-100 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-600 rounded-lg text-white hover:bg-red-700 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                     Delete
@@ -195,10 +201,10 @@ export default function Categories() {
           ))}
 
           {categories.length === 0 && (
-            <div className="col-span-full text-center py-12 bg-white rounded-lg shadow">
-              <FolderOpen className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No categories</h3>
-              <p className="mt-1 text-sm text-gray-500">Get started by creating a new category.</p>
+            <div className={`col-span-full text-center py-12 rounded-lg shadow ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+              <FolderOpen className={`mx-auto h-12 w-12 ${isDark ? 'text-gray-600' : 'text-gray-400'}`} />
+              <h3 className={`mt-2 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>No categories</h3>
+              <p className={`mt-1 text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Get started by creating a new category.</p>
               <button
                 onClick={() => openModal()}
                 className="mt-4 inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -213,14 +219,14 @@ export default function Categories() {
         {/* Add/Edit Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
+            <div className={`rounded-lg shadow-xl p-6 max-w-md w-full mx-4 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+              <h3 className={`text-lg font-medium mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {editingCategory ? 'Edit Category' : 'Add Category'}
               </h3>
               
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     Name *
                   </label>
                   <input
@@ -228,26 +234,30 @@ export default function Categories() {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'
+                    }`}
                     placeholder="e.g., Upper Body Exercises"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     Description
                   </label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'
+                    }`}
                     placeholder="Brief description of this category..."
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     Display Order
                   </label>
                   <input
@@ -255,16 +265,20 @@ export default function Categories() {
                     min="0"
                     value={formData.order}
                     onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
+                    }`}
                   />
-                  <p className="text-xs text-gray-500 mt-1">Lower numbers appear first</p>
+                  <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Lower numbers appear first</p>
                 </div>
 
                 <div className="flex justify-end gap-3 mt-6">
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                    className={`px-4 py-2 border rounded-lg ${
+                      isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
                   >
                     Cancel
                   </button>
