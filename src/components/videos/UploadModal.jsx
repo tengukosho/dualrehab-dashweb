@@ -86,7 +86,7 @@ export default function UploadModal({ isOpen, onClose }) {
           {/* Video File */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Video File * {videoFile && <span className="text-green-600">✓ {videoFile.name}</span>}
+              Video File * {videoFile && <span className="text-green-600">âœ“ {videoFile.name}</span>}
             </label>
             <input
               type="file"
@@ -101,7 +101,7 @@ export default function UploadModal({ isOpen, onClose }) {
           {/* Thumbnail */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Thumbnail (optional) {thumbnailFile && <span className="text-green-600">✓ {thumbnailFile.name}</span>}
+              Thumbnail (optional) {thumbnailFile && <span className="text-green-600">âœ“ {thumbnailFile.name}</span>}
             </label>
             <input
               type="file"
@@ -203,7 +203,7 @@ export default function UploadModal({ isOpen, onClose }) {
               disabled={uploadMutation.isPending}
             />
             <p className="mt-1 text-xs text-gray-500">
-              {formData.duration > 0 && `≈ ${Math.floor(formData.duration / 60)} min ${formData.duration % 60} sec`}
+              {formData.duration > 0 && `â‰ˆ ${Math.floor(formData.duration / 60)} min ${formData.duration % 60} sec`}
             </p>
           </div>
 

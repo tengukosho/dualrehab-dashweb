@@ -282,7 +282,7 @@ export default function Reports() {
             </h2>
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {patients.length === 0 ? (
-                <p className={`text-center py-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                <p className={`text-center py-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                   No patients found
                 </p>
               ) : (
@@ -305,7 +305,7 @@ export default function Reports() {
                         <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
                           {patient.name}
                         </p>
-                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                           {patient.email}
                         </p>
                       </div>
@@ -379,7 +379,7 @@ export default function Reports() {
             ) : (
               <div className="text-center py-8">
                 <AlertCircle className={`w-12 h-12 mx-auto mb-3 ${isDark ? 'text-gray-600' : 'text-gray-400'}`} />
-                <p className={isDark ? 'text-gray-400' : 'text-gray-500'}>
+                <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>
                   Please select a patient
                 </p>
               </div>
@@ -422,16 +422,16 @@ export default function Reports() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
                     <tr>
-                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                         Date
                       </th>
-                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                         Exercise
                       </th>
-                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                         Category
                       </th>
-                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                      <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                         Rating
                       </th>
                     </tr>
@@ -445,10 +445,10 @@ export default function Reports() {
                         <td className={`px-6 py-4 text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
                           {progress.video?.title || 'Unknown'}
                         </td>
-                        <td className={`px-6 py-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <td className={`px-6 py-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                           {progress.video?.category?.name || 'Uncategorized'}
                         </td>
-                        <td className={`px-6 py-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <td className={`px-6 py-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                           {progress.rating ? `${progress.rating}/5` : '-'}
                         </td>
                       </tr>
@@ -457,7 +457,7 @@ export default function Reports() {
                 </table>
               </div>
             ) : (
-              <p className={`text-center py-8 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              <p className={`text-center py-8 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                 No progress data available for this patient
               </p>
             )}
