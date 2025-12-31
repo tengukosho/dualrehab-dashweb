@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { videos, categories, admin } from '../services/api';
 import { Users, Video, MessageSquare, TrendingUp, Calendar, UserCheck, Activity, Clock, FolderOpen } from 'lucide-react';
 import { useDarkMode } from '../components/DarkModeProvider';
+import { useI18n } from '../lib/i18n/I18nContext';
 
 function StatCard({ title, value, icon: Icon, color, subtitle, isDark }) {
   return (
@@ -24,6 +25,7 @@ function StatCard({ title, value, icon: Icon, color, subtitle, isDark }) {
 
 export default function Dashboard() {
   const { isDark } = useDarkMode();
+  const { t } = useI18n();
 
   // Get global stats from admin endpoint
   const { data: adminStats } = useQuery({
@@ -80,42 +82,42 @@ export default function Dashboard() {
   return (
     <div className={`p-8 min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <div className="mb-8">
-        <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Dashboard</h1>
-        <p className={`mt-1 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>System-wide overview â€¢ All users</p>
+        <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.title')}</h1>
+        <p className={`mt-1 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{t('dashboard.systemOverview')} • {t('users.all')}</p>
       </div>
       
       {/* Main Stats Grid */}
       <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Total Videos"
+          title={t('dashboard.totalVideos')}
           value={totalVideos}
           icon={Video}
           color="bg-blue-500"
-          subtitle="Exercise library"
+          subtitle={t('dashboard.exerciseLibrary')}
           isDark={isDark}
         />
         <StatCard
-          title="Total Patients"
+          title={t('dashboard.totalPatients')}
           value={totalUsers}
           icon={Users}
           color="bg-green-500"
-          subtitle={`${totalExperts} experts`}
+          subtitle={`${totalExperts} ${t('dashboard.experts')}`}
           isDark={isDark}
         />
         <StatCard
-          title="Total Completions"
+          title={t('dashboard.totalCompletions')}
           value={totalCompletions}
           icon={TrendingUp}
           color="bg-purple-500"
-          subtitle="All time (all users)"
+          subtitle={t('dashboard.allTime')}
           isDark={isDark}
         />
         <StatCard
-          title="Active Schedules"
+          title={t('dashboard.activeSchedules')}
           value={upcomingSchedules}
           icon={Calendar}
           color="bg-orange-500"
-          subtitle={`${completedSchedules} completed`}
+          subtitle={`${completedSchedules} ${t('analytics.completed')}`}
           isDark={isDark}
         />
       </div>
@@ -123,27 +125,27 @@ export default function Dashboard() {
       {/* Secondary Stats Grid */}
       <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
-          title="Last 7 Days"
+          title={t('dashboard.last7Days')}
           value={completionsLast7Days}
           icon={Activity}
           color="bg-indigo-500"
-          subtitle="Exercises completed"
+          subtitle={t('dashboard.exercisesCompleted')}
           isDark={isDark}
         />
         <StatCard
-          title="Last 30 Days"
+          title={t('dashboard.last30Days')}
           value={completionsLast30Days}
           icon={Clock}
           color="bg-pink-500"
-          subtitle="Monthly activity"
+          subtitle={t('dashboard.monthlyActivity')}
           isDark={isDark}
         />
         <StatCard
-          title="Categories"
+          title={t('dashboard.categories')}
           value={totalCategories}
           icon={FolderOpen}
           color="bg-teal-500"
-          subtitle="Video categories"
+          subtitle={t('dashboard.videoCategories')}
           isDark={isDark}
         />
       </div>
@@ -152,30 +154,30 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Platform Health */}
         <div className={`rounded-lg p-6 shadow ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-          <h2 className={`mb-4 text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Platform Health</h2>
+          <h2 className={`mb-4 text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.platformHealth')}</h2>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Video Library</span>
+              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{t('dashboard.videoLibrary')}</span>
               <span className="text-sm font-semibold text-green-600">
-                {totalVideos > 0 ? `${totalVideos} videos` : 'Empty'}
+                {totalVideos > 0 ? `${totalVideos} ${t('videos.videos')}` : t('dashboard.empty')}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Active Patients</span>
+              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{t('dashboard.activePatients')}</span>
               <span className="text-sm font-semibold text-blue-600">
-                {totalUsers} {totalUsers === 1 ? 'patient' : 'patients'}
+                {totalUsers} {totalUsers === 1 ? t('users.patient') : t('dashboard.patients')}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Average Video Duration</span>
+              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{t('dashboard.avgVideoDuration')}</span>
               <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                {avgDuration > 0 ? `${avgDuration} min` : 'N/A'}
+                {avgDuration > 0 ? `${avgDuration} ${t('videos.minutes')}` : 'N/A'}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Engagement Rate</span>
+              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{t('dashboard.engagementRate')}</span>
               <span className="text-sm font-semibold text-purple-600">
-                {completionsLast7Days > 0 ? 'Active' : 'Low'}
+                {completionsLast7Days > 0 ? t('users.active') : t('dashboard.low')}
               </span>
             </div>
           </div>
@@ -183,7 +185,7 @@ export default function Dashboard() {
 
         {/* Video Distribution by Category */}
         <div className={`rounded-lg p-6 shadow ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-          <h2 className={`mb-4 text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Video Distribution</h2>
+          <h2 className={`mb-4 text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.videoDistribution')}</h2>
           <div className="space-y-3">
             {categoriesData?.slice(0, 5).map((category) => (
               <div key={category.id} className="flex items-center justify-between">
@@ -204,7 +206,7 @@ export default function Dashboard() {
               </div>
             ))}
             {(!categoriesData || categoriesData.length === 0) && (
-              <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>No categories yet. Create some to organize videos.</p>
+              <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>{t('dashboard.noCategoriesYet')}</p>
             )}
           </div>
         </div>
@@ -212,23 +214,23 @@ export default function Dashboard() {
 
       {/* Recent Activity - System Wide */}
       <div className={`mt-8 rounded-lg p-6 shadow ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-        <h2 className={`mb-4 text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>System Activity</h2>
+        <h2 className={`mb-4 text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('dashboard.systemActivity')}</h2>
         <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
           {totalCompletions > 0 ? (
             <div className="space-y-2">
-              <p>âœ“ <span className="font-semibold">{totalCompletions}</span> total exercises completed by all patients</p>
-              <p>âœ“ <span className="font-semibold">{completionsLast7Days}</span> completions in the last 7 days</p>
-              <p>âœ“ <span className="font-semibold">{completionsLast30Days}</span> completions in the last 30 days</p>
-              <p>âœ“ <span className="font-semibold">{upcomingSchedules}</span> upcoming scheduled exercises across all patients</p>
-              <p>âœ“ <span className="font-semibold">{totalUsers}</span> registered patients using the platform</p>
+              <p>✓ <span className="font-semibold">{totalCompletions}</span> {t('dashboard.totalExercisesCompleted')}</p>
+              <p>✓ <span className="font-semibold">{completionsLast7Days}</span> {t('dashboard.completionsLast7Days')}</p>
+              <p>✓ <span className="font-semibold">{completionsLast30Days}</span> {t('dashboard.completionsLast30Days')}</p>
+              <p>✓ <span className="font-semibold">{upcomingSchedules}</span> {t('dashboard.upcomingSchedules')}</p>
+              <p>✓ <span className="font-semibold">{totalUsers}</span> {t('dashboard.registeredPatients')}</p>
               {completionsLast7Days > 20 && (
                 <p className="mt-3 font-semibold text-green-600">
-                  ðŸŽ‰ High engagement! Platform is actively being used.
+                  🎉 {t('dashboard.highEngagement')}
                 </p>
               )}
             </div>
           ) : (
-            <p className={isDark ? 'text-gray-500' : 'text-gray-500'}>No activity yet. Patients will appear here once they start using the platform.</p>
+            <p className={isDark ? 'text-gray-500' : 'text-gray-500'}>{t('dashboard.noActivityYet')}</p>
           )}
         </div>
       </div>

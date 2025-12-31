@@ -1,41 +1,32 @@
 import { useState, useEffect } from 'react';
-import { 
-  Users, Video, Activity, UserCheck, Download
-} from 'lucide-react';
-import { Line, Bar } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-} from 'chart.js';
+import { Users, Video, Activity, Download, TrendingUp } from 'lucide-react';
 import { useDarkMode } from '../components/DarkModeProvider';
+import { useI18n } from '../lib/i18n/I18nContext';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
+function StatCard({ title, value, icon: Icon, color, isDark }) {
+  return (
+    <div className={`rounded-lg p-6 shadow ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className={`text-sm font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{title}</p>
+          <p className={`mt-2 text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{value}</p>
+        </div>
+        <div className={`rounded-full p-3 ${color}`}>
+          <Icon className="h-6 w-6 text-white" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Analytics() {
   const { isDark } = useDarkMode();
+  const { t } = useI18n();
   const [stats, setStats] = useState(null);
   const [videoStats, setVideoStats] = useState([]);
   const [categoryStats, setCategoryStats] = useState([]);
   const [engagement, setEngagement] = useState([]);
-  const [activeUsers, setActiveUsers] = useState(null);
+  const [activeUsersData, setActiveUsersData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState('7');
 
@@ -51,18 +42,18 @@ export default function Analytics() {
       const baseURL = 'http://192.168.2.2:3000/api';
 
       const [overview, videos, categories, engagementData, activeData] = await Promise.all([
-        fetch(`${baseURL}/stats/overview`, { headers }).then(r => r.json()),
-        fetch(`${baseURL}/stats/videos`, { headers }).then(r => r.json()),
-        fetch(`${baseURL}/stats/categories`, { headers }).then(r => r.json()),
-        fetch(`${baseURL}/stats/engagement?days=${timeFilter}`, { headers }).then(r => r.json()),
-        fetch(`${baseURL}/stats/active-users?period=${timeFilter}`, { headers }).then(r => r.json())
+        fetch(`${baseURL}/stats/overview`, { headers }).then(r => r.json()).catch(() => null),
+        fetch(`${baseURL}/stats/videos`, { headers }).then(r => r.json()).catch(() => ({ topVideos: [] })),
+        fetch(`${baseURL}/stats/categories`, { headers }).then(r => r.json()).catch(() => ({ categories: [] })),
+        fetch(`${baseURL}/stats/engagement?days=${timeFilter}`, { headers }).then(r => r.json()).catch(() => ({ users: [] })),
+        fetch(`${baseURL}/stats/active-users?period=${timeFilter}`, { headers }).then(r => r.json()).catch(() => null)
       ]);
 
       setStats(overview);
       setVideoStats(videos.topVideos || []);
       setCategoryStats(categories.categories || []);
       setEngagement(engagementData.users || []);
-      setActiveUsers(activeData);
+      setActiveUsersData(activeData);
     } catch (error) {
       console.error('Error fetching stats:', error);
     } finally {
@@ -71,7 +62,10 @@ export default function Analytics() {
   };
 
   const exportToCSV = (data, filename) => {
-    if (!data || data.length === 0) return;
+    if (!data || data.length === 0) {
+      alert(t('common.noData'));
+      return;
+    }
     const headers = Object.keys(data[0]);
     const csvContent = [
       headers.join(','),
@@ -87,254 +81,211 @@ export default function Analytics() {
     URL.revokeObjectURL(url);
   };
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        labels: {
-          color: isDark ? '#e5e7eb' : '#374151'
-        }
-      }
-    },
-    scales: {
-      x: {
-        ticks: { color: isDark ? '#9ca3af' : '#6b7280' },
-        grid: { color: isDark ? '#374151' : '#e5e7eb' }
-      },
-      y: {
-        ticks: { color: isDark ? '#9ca3af' : '#6b7280' },
-        grid: { color: isDark ? '#374151' : '#e5e7eb' },
-        beginAtZero: true
-      }
-    }
-  };
-
-  const activeUsersChartData = {
-    labels: activeUsers?.dailyActivity?.map(d => new Date(d.date).toLocaleDateString()) || [],
-    datasets: [{
-      label: 'Active Users',
-      data: activeUsers?.dailyActivity?.map(d => d.count) || [],
-      borderColor: 'rgb(59, 130, 246)',
-      backgroundColor: 'rgba(59, 130, 246, 0.1)',
-      fill: true,
-      tension: 0.3
-    }]
-  };
-
-  const categoryChartData = {
-    labels: categoryStats.map(c => c.name),
-    datasets: [
-      {
-        label: 'Videos',
-        data: categoryStats.map(c => c.videoCount),
-        backgroundColor: 'rgba(59, 130, 246, 0.8)',
-      },
-      {
-        label: 'Completions',
-        data: categoryStats.map(c => c.totalCompletions),
-        backgroundColor: 'rgba(16, 185, 129, 0.8)',
-      }
-    ]
-  };
-
-  const engagementChartData = {
-    labels: engagement.slice(0, 10).map(u => u.name),
-    datasets: [{
-      label: 'Completion Rate (%)',
-      data: engagement.slice(0, 10).map(u => u.completionRate),
-      backgroundColor: engagement.slice(0, 10).map(u => 
-        u.completionRate >= 80 ? 'rgba(16, 185, 129, 0.8)' :
-        u.completionRate >= 50 ? 'rgba(251, 191, 36, 0.8)' : 'rgba(239, 68, 68, 0.8)'
-      ),
-    }]
-  };
-
   if (loading) {
     return (
-      <div className={`min-h-screen p-8 ${isDark ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>
-        <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+      <div className={`flex items-center justify-center h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
+  const totalPatients = stats?.users?.total || 0;
+  const totalVideos = stats?.content?.videos || 0;
+  const completionRate = stats?.activity?.completionRate || 0;
+  const activeUsers = activeUsersData?.activeUsers || 0;
+
   return (
-    <div className={`min-h-screen p-8 ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
+    <div className={`p-8 min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="mb-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {t('analytics.title')}
+            </h1>
+            <p className={`mt-1 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              {t('analytics.subtitle')}
+            </p>
+          </div>
+          <button
+            onClick={() => exportToCSV(engagement, 'analytics')}
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+          >
+            <Download className="h-4 w-4" />
+            {t('analytics.export')}
+          </button>
+        </div>
+      </div>
+
+      {/* Time Filter */}
+      <div className={`mb-6 rounded-lg shadow p-4 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+        <select
+          value={timeFilter}
+          onChange={(e) => setTimeFilter(e.target.value)}
+          className={`px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm ${
+            isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
+          }`}
+        >
+          <option value="7">{t('analytics.last7Days')}</option>
+          <option value="30">{t('dashboard.last30Days')}</option>
+          <option value="90">{t('reports.last90days')}</option>
+        </select>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title={t('analytics.totalPatients')}
+          value={totalPatients}
+          icon={Users}
+          color="bg-blue-500"
+          isDark={isDark}
+        />
+        <StatCard
+          title={t('analytics.totalVideos')}
+          value={totalVideos}
+          icon={Video}
+          color="bg-green-500"
+          isDark={isDark}
+        />
+        <StatCard
+          title={t('analytics.completionRate')}
+          value={`${completionRate}%`}
+          icon={Activity}
+          color="bg-purple-500"
+          isDark={isDark}
+        />
+        <StatCard
+          title={t('analytics.activeUsers')}
+          value={activeUsers}
+          icon={TrendingUp}
+          color="bg-orange-500"
+          isDark={isDark}
+        />
+      </div>
+
+      {/* Category Performance */}
+      <div className={`mb-8 rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+        <h2 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+          {t('analytics.categoryPerformance')}
+        </h2>
+        <div className="space-y-4">
+          {categoryStats.length === 0 ? (
+            <p className={`text-center py-8 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              {t('common.noData')}
+            </p>
+          ) : (
+            categoryStats.map((category, index) => {
+              const maxCompletions = Math.max(...categoryStats.map(c => c.totalCompletions), 1);
+              const percentage = (category.totalCompletions / maxCompletions) * 100;
+              
+              return (
+                <div key={index} className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      {category.name}
+                    </span>
+                    <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {category.totalCompletions} {t('analytics.completions')}
+                    </span>
+                  </div>
+                  <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                    <div
+                      className="h-full bg-blue-600 transition-all duration-500"
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Top Videos */}
+      <div className={`mb-8 rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+        <h2 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+          {t('analytics.topCompletionRates')}
+        </h2>
+        <div className="space-y-3">
+          {videoStats.length === 0 ? (
+            <p className={`text-center py-8 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              {t('common.noData')}
+            </p>
+          ) : (
+            videoStats.map((video, index) => (
+              <div key={index} className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                <div className="flex justify-between items-center">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
+                        index === 0 ? 'bg-yellow-500 text-white' :
+                        index === 1 ? 'bg-gray-400 text-white' :
+                        index === 2 ? 'bg-orange-600 text-white' :
+                        'bg-gray-300 text-gray-700'
+                      }`}>
+                        {index + 1}
+                      </span>
+                      <h3 className={`font-medium text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        {video.title}
+                      </h3>
+                    </div>
+                    <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {video.category} • {video.completions} {t('analytics.completions')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* User Engagement */}
+      {engagement.length > 0 && (
         <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                Analytics Dashboard
-              </h1>
-              <p className={`mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                Comprehensive platform statistics and insights
-              </p>
-            </div>
-            <select
-              value={timeFilter}
-              onChange={(e) => setTimeFilter(e.target.value)}
-              className={`px-4 py-2 rounded-lg border ${
-                isDark 
-                  ? 'bg-gray-700 border-gray-600 text-white' 
-                  : 'bg-white border-gray-300'
-              }`}
-            >
-              <option value="7">Last 7 days</option>
-              <option value="30">Last 30 days</option>
-              <option value="90">Last 90 days</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            icon={Users}
-            title="Total Patients"
-            value={stats?.users?.total || 0}
-            subtitle={`${stats?.users?.experts || 0} experts`}
-            color="bg-blue-600"
-            isDark={isDark}
-          />
-          <StatCard
-            icon={Video}
-            title="Total Videos"
-            value={stats?.content?.videos || 0}
-            subtitle={`${stats?.content?.categories || 0} categories`}
-            color="bg-green-600"
-            isDark={isDark}
-          />
-          <StatCard
-            icon={Activity}
-            title="Completion Rate"
-            value={`${stats?.activity?.completionRate || 0}%`}
-            subtitle={`${stats?.activity?.completedSchedules || 0} completed`}
-            color="bg-purple-600"
-            isDark={isDark}
-          />
-          <StatCard
-            icon={UserCheck}
-            title="Active Users"
-            value={activeUsers?.activeUsers || 0}
-            subtitle={`Last ${timeFilter} days`}
-            color="bg-yellow-600"
-            isDark={isDark}
-          />
-        </div>
-
-        {/* User Activity Chart */}
-        <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              User Activity Trend
-            </h2>
-          </div>
-          <div className="h-64">
-            <Line data={activeUsersChartData} options={chartOptions} />
-          </div>
-        </div>
-
-        {/* Category & Engagement Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                Category Performance
-              </h2>
-              <button
-                onClick={() => exportToCSV(categoryStats, 'categories')}
-                className={`text-sm ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
-              >
-                Export
-              </button>
-            </div>
-            <div className="h-64">
-              <Bar data={categoryChartData} options={chartOptions} />
-            </div>
-          </div>
-
-          <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                Top Completion Rates
-              </h2>
-              <button
-                onClick={() => exportToCSV(engagement, 'engagement')}
-                className={`text-sm ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
-              >
-                Export
-              </button>
-            </div>
-            <div className="h-64">
-              <Bar 
-                data={engagementChartData} 
-                options={{
-                  ...chartOptions,
-                  indexAxis: 'y',
-                  scales: {
-                    ...chartOptions.scales,
-                    x: { 
-                      ...chartOptions.scales.x,
-                      max: 100
-                    }
-                  }
-                }} 
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Top Videos Table */}
-        <div className={`rounded-lg shadow overflow-hidden ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-          <div className={`px-6 py-4 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-            <div className="flex items-center justify-between">
-              <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                Top Videos
-              </h2>
-              <button
-                onClick={() => exportToCSV(videoStats, 'top_videos')}
-                className={`text-sm ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
-              >
-                Export
-              </button>
-            </div>
-          </div>
+          <h2 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            {t('analytics.userActivityTrend')}
+          </h2>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
                 <tr>
                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                    Video
+                    {t('users.name')}
                   </th>
                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                    Category
+                    {t('reports.totalExercises')}
                   </th>
                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                    Completions
+                    {t('analytics.completed')}
                   </th>
                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                    Scheduled
+                    {t('analytics.completionRate')}
                   </th>
                 </tr>
               </thead>
               <tbody className={`divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                {videoStats.map((video) => (
-                  <tr key={video.id}>
+                {engagement.slice(0, 10).map((user, index) => (
+                  <tr key={index}>
                     <td className={`px-6 py-4 text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                      {video.title}
+                      {user.name}
                     </td>
                     <td className={`px-6 py-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                      {video.category}
+                      {user.totalProgress}
                     </td>
                     <td className={`px-6 py-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                      {video.completions}
+                      {user.completed}
                     </td>
                     <td className={`px-6 py-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                      {video.scheduled}
+                      <div className="flex items-center gap-2">
+                        <div className={`flex-1 h-2 rounded-full overflow-hidden ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                          <div
+                            className="h-full bg-green-600"
+                            style={{ width: `${user.completionRate}%` }}
+                          />
+                        </div>
+                        <span className="text-xs w-12 text-right">{user.completionRate}%</span>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -342,32 +293,7 @@ export default function Analytics() {
             </table>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function StatCard({ icon: Icon, title, value, subtitle, color, isDark }) {
-  return (
-    <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className={`text-sm font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-            {title}
-          </p>
-          <p className={`mt-2 text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            {value}
-          </p>
-          {subtitle && (
-            <p className={`mt-1 text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              {subtitle}
-            </p>
-          )}
-        </div>
-        <div className={`rounded-full p-3 ${color}`}>
-          <Icon className="h-6 w-6 text-white" />
-        </div>
-      </div>
+      )}
     </div>
   );
 }

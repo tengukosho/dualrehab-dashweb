@@ -2,9 +2,24 @@ import { useState, useEffect } from 'react';
 import { Video, Plus, Edit2, Trash2, Search, X, Upload } from 'lucide-react';
 import api from '../services/api';
 import { useDarkMode } from '../components/DarkModeProvider';
+import { useI18n } from '../lib/i18n/I18nContext';
+
+function StatCard({ title, value, color, isDark }) {
+  return (
+    <div className={`rounded-lg p-6 shadow ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+      <div>
+        <p className={`text-sm font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{title}</p>
+        <p className={`mt-2 text-3xl font-bold ${color || (isDark ? 'text-white' : 'text-gray-900')}`}>
+          {value}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function Videos() {
   const { isDark } = useDarkMode();
+  const { t } = useI18n();
   const [videos, setVideos] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +44,7 @@ export default function Videos() {
       setVideos(response.data.videos || response.data);
     } catch (error) {
       console.error('Failed to load videos:', error);
-      alert('Failed to load videos: ' + error.message);
+      alert(t('videos.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -45,14 +60,14 @@ export default function Videos() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this video?')) return;
+    if (!confirm(t('videos.confirmDelete'))) return;
     
     try {
       await api.delete(`/videos/${id}`);
       await loadVideos();
-      alert('Video deleted successfully!');
+      alert(t('videos.deleteSuccess'));
     } catch (error) {
-      alert('Failed to delete video: ' + error.message);
+      alert(t('videos.deleteFailed'));
     }
   };
 
@@ -80,9 +95,9 @@ export default function Videos() {
       await loadVideos();
       setShowEditModal(false);
       setEditingVideo(null);
-      alert('Video updated successfully!');
+      alert(t('videos.updateSuccess'));
     } catch (error) {
-      alert('Failed to update video: ' + error.message);
+      alert(t('videos.updateFailed'));
     }
   };
 
@@ -98,10 +113,10 @@ export default function Videos() {
       });
       await loadVideos();
       setShowUploadModal(false);
-      alert('Video uploaded successfully!');
+      alert(t('videos.addSuccess'));
       e.target.reset();
     } catch (error) {
-      alert('Failed to upload video: ' + (error.response?.data?.error || error.message));
+      alert(t('videos.addFailed'));
     } finally {
       setUploading(false);
     }
@@ -123,8 +138,6 @@ export default function Videos() {
           return new Date(a.uploadDate) - new Date(b.uploadDate);
         case 'title':
           return a.title.localeCompare(b.title);
-        case 'duration':
-          return b.duration - a.duration;
         default:
           return 0;
       }
@@ -149,249 +162,235 @@ export default function Videos() {
     }
   };
 
+  const getDifficultyLabel = (level) => {
+    switch(level) {
+      case 'beginner': return t('videos.beginner');
+      case 'intermediate': return t('videos.intermediate');
+      case 'advanced': return t('videos.advanced');
+      default: return level;
+    }
+  };
+
   if (loading) {
     return (
-      <div className={`flex items-center justify-center h-64 ${isDark ? 'bg-gray-900' : ''}`}>
+      <div className={`flex items-center justify-center h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className={`flex-1 p-8 overflow-auto min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
+    <div className={`p-8 min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="mb-8">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Videos</h1>
-            <p className={`mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Manage rehabilitation exercise videos</p>
+            <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {t('videos.title')}
+            </h1>
+            <p className={`mt-1 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              {t('videos.manageTitle')}
+            </p>
           </div>
           <button
             onClick={() => setShowUploadModal(true)}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
           >
-            <Plus className="h-5 w-5" />
-            Upload Video
+            <Plus className="h-4 w-4" />
+            {t('videos.uploadVideo')}
           </button>
         </div>
+      </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Total Videos</p>
-                <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{videos.length}</p>
-              </div>
-              <Video className="h-8 w-8 text-blue-600" />
-            </div>
-          </div>
+      {/* Stats */}
+      <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title={t('dashboard.totalVideos')}
+          value={videos.length}
+          isDark={isDark}
+        />
+        <StatCard
+          title={t('videos.beginner')}
+          value={videos.filter(v => v.difficultyLevel === 'beginner').length}
+          color="text-green-600"
+          isDark={isDark}
+        />
+        <StatCard
+          title={t('videos.intermediate')}
+          value={videos.filter(v => v.difficultyLevel === 'intermediate').length}
+          color="text-yellow-600"
+          isDark={isDark}
+        />
+        <StatCard
+          title={t('videos.advanced')}
+          value={videos.filter(v => v.difficultyLevel === 'advanced').length}
+          color="text-red-600"
+          isDark={isDark}
+        />
+      </div>
 
-          <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Beginner</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {videos.filter(v => v.difficultyLevel === 'beginner').length}
-                </p>
-              </div>
-              <Video className="h-8 w-8 text-green-600" />
-            </div>
-          </div>
-
-          <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Intermediate</p>
-                <p className="text-2xl font-bold text-yellow-600">
-                  {videos.filter(v => v.difficultyLevel === 'intermediate').length}
-                </p>
-              </div>
-              <Video className="h-8 w-8 text-yellow-600" />
-            </div>
-          </div>
-
-          <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Advanced</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {videos.filter(v => v.difficultyLevel === 'advanced').length}
-                </p>
-              </div>
-              <Video className="h-8 w-8 text-red-600" />
-            </div>
-          </div>
-        </div>
-
-        {/* Filters and Search */}
-        <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="lg:col-span-2 relative">
-              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-              <input
-                type="text"
-                placeholder="Search videos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'
-                }`}
-              />
-            </div>
-
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className={`px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
+      {/* Filters */}
+      <div className={`mb-6 rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="relative">
+            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+            <input
+              type="text"
+              placeholder={t('videos.search')}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={`w-full pl-10 pr-4 py-2 border rounded-lg text-sm ${
+                isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'
               }`}
-            >
-              <option value="all">All Categories</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
-
-            <select
-              value={difficultyFilter}
-              onChange={(e) => setDifficultyFilter(e.target.value)}
-              className={`px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
-              }`}
-            >
-              <option value="all">All Difficulties</option>
-              <option value="beginner">Beginner</option>
-              <option value="intermediate">Intermediate</option>
-              <option value="advanced">Advanced</option>
-            </select>
-
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className={`px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
-              }`}
-            >
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-              <option value="title">Title (A-Z)</option>
-              <option value="duration">Duration</option>
-            </select>
+            />
           </div>
-        </div>
 
-        {/* Results Count */}
-        <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-          Showing {filteredAndSortedVideos.length} of {videos.length} videos
-        </div>
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className={`px-4 py-2 border rounded-lg text-sm ${
+              isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
+            }`}
+          >
+            <option value="all">{t('videos.allCategories')}</option>
+            {categories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
 
-        {/* Videos Table */}
-        <div className={`rounded-lg shadow overflow-hidden ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
-              <tr>
-                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
-                  Video
-                </th>
-                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
-                  Category
-                </th>
-                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
-                  Duration
-                </th>
-                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
-                  Difficulty
-                </th>
-                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
-                  Uploaded
-                </th>
-                <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className={`divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`}>
-              {filteredAndSortedVideos.map((video) => (
-                <tr key={video.id} className={isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}>
-                  <td className="px-6 py-4">
-                    <div>
-                      <div className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{video.title}</div>
-                      {video.description && (
-                        <div className={`text-sm truncate max-w-md ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{video.description}</div>
-                      )}
-                    </div>
-                  </td>
-                  <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                    {getCategoryName(video.categoryId)}
-                  </td>
-                  <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                    {formatDuration(video.duration)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getDifficultyColor(video.difficultyLevel)}`}>
-                      {video.difficultyLevel}
-                    </span>
-                  </td>
-                  <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                    {video.uploadDate ? new Date(video.uploadDate).toLocaleDateString() : '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => handleEdit(video)}
-                        className="text-blue-600 hover:text-blue-900"
-                        title="Edit Video"
-                      >
-                        <Edit2 className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(video.id)}
-                        className="text-red-600 hover:text-red-900"
-                        title="Delete Video"
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </td>
+          <select
+            value={difficultyFilter}
+            onChange={(e) => setDifficultyFilter(e.target.value)}
+            className={`px-4 py-2 border rounded-lg text-sm ${
+              isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
+            }`}
+          >
+            <option value="all">{t('videos.allDifficulties')}</option>
+            <option value="beginner">{t('videos.beginner')}</option>
+            <option value="intermediate">{t('videos.intermediate')}</option>
+            <option value="advanced">{t('videos.advanced')}</option>
+          </select>
+
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className={`px-4 py-2 border rounded-lg text-sm ${
+              isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
+            }`}
+          >
+            <option value="newest">{t('videos.newestFirst')}</option>
+            <option value="oldest">{t('videos.oldestFirst')}</option>
+            <option value="title">{t('videos.titleAZ')}</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Videos Table */}
+      <div className={`rounded-lg shadow overflow-hidden ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+        {filteredAndSortedVideos.length === 0 ? (
+          <div className="text-center py-12">
+            <Video className={`w-12 h-12 mx-auto mb-4 ${isDark ? 'text-gray-600' : 'text-gray-400'}`} />
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              {t('videos.noVideos')}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
+                <tr>
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {t('videos.videoTitle')}
+                  </th>
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {t('videos.category')}
+                  </th>
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {t('videos.difficulty')}
+                  </th>
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {t('videos.duration')}
+                  </th>
+                  <th className={`px-6 py-3 text-right text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {t('users.actions')}
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {filteredAndSortedVideos.length === 0 && (
-            <div className={`text-center py-12 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-              <Video className={`mx-auto h-12 w-12 ${isDark ? 'text-gray-600' : 'text-gray-400'}`} />
-              <h3 className={`mt-2 text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-900'}`}>No videos found</h3>
-              <p className={`mt-1 text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                {searchTerm || categoryFilter !== 'all' || difficultyFilter !== 'all' 
-                  ? 'Try adjusting your filters' 
-                  : 'Get started by uploading a video'}
-              </p>
-            </div>
-          )}
-        </div>
+              </thead>
+              <tbody className={`divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                {filteredAndSortedVideos.map((video) => (
+                  <tr key={video.id} className={isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}>
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className={`font-medium text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {video.title}
+                        </p>
+                        {video.description && (
+                          <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'} line-clamp-1`}>
+                            {video.description}
+                          </p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {getCategoryName(video.categoryId)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getDifficultyColor(video.difficultyLevel)}`}>
+                        {getDifficultyLabel(video.difficultyLevel)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {formatDuration(video.duration)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleEdit(video)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                          title={t('videos.editVideo')}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(video.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                          title={t('videos.deleteVideo')}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Upload Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className={`rounded-lg shadow-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className={`text-lg font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Upload Video</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className={`rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+            <div className={`p-6 border-b flex items-center justify-between ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {t('videos.uploadVideo')}
+              </h2>
               <button
                 onClick={() => setShowUploadModal(false)}
-                disabled={uploading}
-                className={`${isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}
+                className={`p-2 rounded-lg ${isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-400 hover:bg-gray-100'}`}
               >
-                <X className="h-6 w-6" />
+                <X className="w-5 h-5" />
               </button>
             </div>
-            
-            <form onSubmit={handleUpload} className="space-y-4">
+
+            <form onSubmit={handleUpload} className="p-6 space-y-4">
               <div>
                 <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Video File *
+                  {t('videos.videoFile')} *
                 </label>
                 <input
                   type="file"
@@ -399,72 +398,55 @@ export default function Videos() {
                   accept="video/*"
                   required
                   disabled={uploading}
-                  className={`w-full px-3 py-2 border rounded-lg text-sm file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100 ${
-                    isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
-                  }`}
+                  className={`w-full text-sm ${
+                    isDark ? 'text-gray-300 file:bg-gray-700 file:text-white' : 'file:bg-gray-50'
+                  } file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-medium hover:file:bg-gray-600`}
                 />
               </div>
 
               <div>
                 <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Thumbnail (optional)
-                </label>
-                <input
-                  type="file"
-                  name="thumbnail"
-                  accept="image/*"
-                  disabled={uploading}
-                  className={`w-full px-3 py-2 border rounded-lg text-sm file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100 ${
-                    isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
-                  }`}
-                />
-              </div>
-
-              <div>
-                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Title *
+                  {t('videos.videoTitle')} *
                 </label>
                 <input
                   type="text"
                   name="title"
                   required
                   disabled={uploading}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                    isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'
+                  className={`w-full px-4 py-2 border rounded-lg text-sm ${
+                    isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
                   }`}
-                  placeholder="e.g., Upper Body Stretching"
                 />
               </div>
 
               <div>
                 <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Description
+                  {t('videos.description')}
                 </label>
                 <textarea
                   name="description"
                   rows={3}
                   disabled={uploading}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                    isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'
+                  className={`w-full px-4 py-2 border rounded-lg text-sm ${
+                    isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
                   }`}
-                  placeholder="Brief description of the exercise..."
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Category *
+                    {t('videos.category')} *
                   </label>
                   <select
                     name="categoryId"
                     required
                     disabled={uploading}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                    className={`w-full px-4 py-2 border rounded-lg text-sm ${
                       isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
                     }`}
                   >
-                    <option value="">Select category</option>
+                    <option value="">{t('videos.selectCategory')}</option>
                     {categories.map(cat => (
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
@@ -473,26 +455,26 @@ export default function Videos() {
 
                 <div>
                   <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Difficulty *
+                    {t('videos.difficulty')} *
                   </label>
                   <select
                     name="difficultyLevel"
                     required
                     disabled={uploading}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                    className={`w-full px-4 py-2 border rounded-lg text-sm ${
                       isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
                     }`}
                   >
-                    <option value="beginner">Beginner</option>
-                    <option value="intermediate">Intermediate</option>
-                    <option value="advanced">Advanced</option>
+                    <option value="beginner">{t('videos.beginner')}</option>
+                    <option value="intermediate">{t('videos.intermediate')}</option>
+                    <option value="advanced">{t('videos.advanced')}</option>
                   </select>
                 </div>
               </div>
 
               <div>
                 <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Duration (seconds) *
+                  {t('videos.duration')} (seconds) *
                 </label>
                 <input
                   type="number"
@@ -500,53 +482,38 @@ export default function Videos() {
                   required
                   min="1"
                   disabled={uploading}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                  placeholder="300"
+                  className={`w-full px-4 py-2 border rounded-lg text-sm ${
                     isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'
                   }`}
-                  placeholder="e.g., 300 (5 minutes)"
                 />
               </div>
 
-              <div>
-                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Instructions
-                </label>
-                <textarea
-                  name="instructions"
-                  rows={4}
-                  disabled={uploading}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                    isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'
-                  }`}
-                  placeholder="Step-by-step instructions..."
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 mt-6">
+              <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setShowUploadModal(false)}
                   disabled={uploading}
-                  className={`px-4 py-2 border rounded-lg disabled:opacity-50 ${
+                  className={`px-4 py-2 border rounded-lg text-sm font-medium ${
                     isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={uploading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
                 >
                   {uploading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Uploading...
+                      {t('common.loading')}
                     </>
                   ) : (
                     <>
                       <Upload className="h-4 w-4" />
-                      Upload Video
+                      {t('videos.uploadVideo')}
                     </>
                   )}
                 </button>
@@ -558,32 +525,34 @@ export default function Videos() {
 
       {/* Edit Modal */}
       {showEditModal && editingVideo && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className={`rounded-lg shadow-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className={`text-lg font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Edit Video</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className={`rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+            <div className={`p-6 border-b flex items-center justify-between ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {t('videos.editVideo')}
+              </h2>
               <button
                 onClick={() => {
                   setShowEditModal(false);
                   setEditingVideo(null);
                 }}
-                className={`${isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}
+                className={`p-2 rounded-lg ${isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-400 hover:bg-gray-100'}`}
               >
-                <X className="h-6 w-6" />
+                <X className="w-5 h-5" />
               </button>
             </div>
             
-            <form onSubmit={handleUpdateVideo} className="space-y-4">
+            <form onSubmit={handleUpdateVideo} className="p-6 space-y-4">
               <div>
                 <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Title *
+                  {t('videos.videoTitle')} *
                 </label>
                 <input
                   type="text"
                   name="title"
                   required
                   defaultValue={editingVideo.title}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                  className={`w-full px-4 py-2 border rounded-lg text-sm ${
                     isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
                   }`}
                 />
@@ -591,13 +560,13 @@ export default function Videos() {
 
               <div>
                 <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Description
+                  {t('videos.description')}
                 </label>
                 <textarea
                   name="description"
                   rows={3}
                   defaultValue={editingVideo.description || ''}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                  className={`w-full px-4 py-2 border rounded-lg text-sm ${
                     isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
                   }`}
                 />
@@ -606,13 +575,13 @@ export default function Videos() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Category *
+                    {t('videos.category')} *
                   </label>
                   <select
                     name="categoryId"
                     required
                     defaultValue={editingVideo.categoryId}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                    className={`w-full px-4 py-2 border rounded-lg text-sm ${
                       isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
                     }`}
                   >
@@ -624,26 +593,26 @@ export default function Videos() {
 
                 <div>
                   <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Difficulty *
+                    {t('videos.difficulty')} *
                   </label>
                   <select
                     name="difficultyLevel"
                     required
                     defaultValue={editingVideo.difficultyLevel}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                    className={`w-full px-4 py-2 border rounded-lg text-sm ${
                       isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
                     }`}
                   >
-                    <option value="beginner">Beginner</option>
-                    <option value="intermediate">Intermediate</option>
-                    <option value="advanced">Advanced</option>
+                    <option value="beginner">{t('videos.beginner')}</option>
+                    <option value="intermediate">{t('videos.intermediate')}</option>
+                    <option value="advanced">{t('videos.advanced')}</option>
                   </select>
                 </div>
               </div>
 
               <div>
                 <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Duration (seconds) *
+                  {t('videos.duration')} (seconds) *
                 </label>
                 <input
                   type="number"
@@ -651,45 +620,30 @@ export default function Videos() {
                   required
                   min="1"
                   defaultValue={editingVideo.duration}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                  className={`w-full px-4 py-2 border rounded-lg text-sm ${
                     isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
                   }`}
                 />
               </div>
 
-              <div>
-                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Instructions
-                </label>
-                <textarea
-                  name="instructions"
-                  rows={4}
-                  defaultValue={editingVideo.instructions || ''}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-                    isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'
-                  }`}
-                  placeholder="Step-by-step instructions..."
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 mt-6">
+              <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => {
                     setShowEditModal(false);
                     setEditingVideo(null);
                   }}
-                  className={`px-4 py-2 border rounded-lg ${
+                  className={`px-4 py-2 border rounded-lg text-sm font-medium ${
                     isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
                 >
-                  Update Video
+                  {t('common.update')}
                 </button>
               </div>
             </form>

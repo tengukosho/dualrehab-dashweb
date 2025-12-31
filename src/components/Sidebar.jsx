@@ -10,15 +10,18 @@ import {
   BarChart3,
   FileText,
   Moon,
-  Sun
+  Sun,
+  Globe
 } from 'lucide-react';
 import { useDarkMode } from './DarkModeProvider';
+import { useI18n } from '../lib/i18n/I18nContext';
 
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const { isDark, setIsDark } = useDarkMode();
+  const { t, language, switchLanguage } = useI18n();
 
   useEffect(() => {
     fetchCurrentUser();
@@ -51,25 +54,30 @@ export default function Sidebar() {
     navigate('/login');
   };
 
+  const toggleLanguage = () => {
+    const newLang = language === 'vi' ? 'en' : 'vi';
+    switchLanguage(newLang);
+  };
+
   const isActive = (path) => {
     return location.pathname === path;
   };
 
   const adminMenuItems = [
-    { path: '/', icon: Home, label: 'Dashboard' },
-    { path: '/videos', icon: Video, label: 'Videos' },
-    { path: '/categories', icon: Grid, label: 'Categories' },
-    { path: '/users', icon: Users, label: 'Users' },
-    { path: '/messages', icon: MessageSquare, label: 'Messages' },
-    { path: '/analytics', icon: BarChart3, label: 'Analytics' },
-    { path: '/reports', icon: FileText, label: 'Reports' },
+    { path: '/', icon: Home, label: t('nav.dashboard') },
+    { path: '/videos', icon: Video, label: t('nav.videos') },
+    { path: '/categories', icon: Grid, label: t('nav.categories') },
+    { path: '/users', icon: Users, label: t('nav.users') },
+    { path: '/messages', icon: MessageSquare, label: t('nav.messages') },
+    { path: '/analytics', icon: BarChart3, label: t('nav.analytics') },
+    { path: '/reports', icon: FileText, label: t('nav.reports') },
   ];
 
   const expertMenuItems = [
-    { path: '/videos', icon: Video, label: 'Videos' },
-    { path: '/categories', icon: Grid, label: 'Categories' },
-    { path: '/users', icon: Users, label: 'Users' },
-    { path: '/messages', icon: MessageSquare, label: 'Messages' },
+    { path: '/videos', icon: Video, label: t('nav.videos') },
+    { path: '/categories', icon: Grid, label: t('nav.categories') },
+    { path: '/users', icon: Users, label: t('nav.users') },
+    { path: '/messages', icon: MessageSquare, label: t('nav.messages') },
   ];
 
   const menuItems = currentUser?.role === 'admin' ? adminMenuItems : expertMenuItems;
@@ -80,9 +88,9 @@ export default function Sidebar() {
     }`}>
       {/* Logo */}
       <div className={`p-6 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-        <h1 className="text-2xl font-bold text-blue-600">Rehab Admin</h1>
+        <h1 className="text-2xl font-bold text-blue-600">{t('auth.rehabAdmin')}</h1>
         <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-          {currentUser?.role === 'admin' ? 'Administrator Portal' : 'Expert Portal'}
+          {currentUser?.role === 'admin' ? t('sidebar.adminPortal') : t('sidebar.expertPortal')}
         </p>
       </div>
 
@@ -122,11 +130,24 @@ export default function Sidebar() {
               {currentUser.email}
             </p>
             <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-              {currentUser.role}
+              {currentUser.role === 'admin' ? t('sidebar.admin') : t('sidebar.expert')}
             </p>
           </div>
         )}
         
+        {/* Language Toggle */}
+        <button
+          onClick={toggleLanguage}
+          className={`flex items-center gap-3 w-full px-4 py-2 mb-2 rounded-lg transition-colors ${
+            isDark
+              ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+          }`}
+        >
+          <Globe className="w-5 h-5" />
+          <span className="text-sm">{language === 'vi' ? 'Tiếng Việt' : 'English'}</span>
+        </button>
+
         {/* Dark Mode Toggle */}
         <button
           onClick={() => setIsDark(!isDark)}
@@ -137,7 +158,7 @@ export default function Sidebar() {
           }`}
         >
           {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          <span className="text-sm">{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+          <span className="text-sm">{isDark ? t('common.light') : t('common.dark')}</span>
         </button>
 
         {/* Logout */}
@@ -146,7 +167,7 @@ export default function Sidebar() {
           className="flex items-center gap-3 w-full px-4 py-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
         >
           <LogOut className="w-5 h-5" />
-          <span className="text-sm font-medium">Logout</span>
+          <span className="text-sm font-medium">{t('auth.logout')}</span>
         </button>
       </div>
     </div>

@@ -9,12 +9,29 @@ import {
   Trash2,
   X,
   Save,
-  MessageSquare
+  MessageSquare,
+  Users as UsersIcon
 } from 'lucide-react';
 import { useDarkMode } from '../components/DarkModeProvider';
+import { useI18n } from '../lib/i18n/I18nContext';
+
+function StatCard({ title, value, subtitle, isDark }) {
+  return (
+    <div className={`rounded-lg p-6 shadow ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+      <div>
+        <p className={`text-sm font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{title}</p>
+        <p className={`mt-2 text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{value}</p>
+        {subtitle && (
+          <p className={`mt-1 text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>{subtitle}</p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function Users() {
   const { isDark } = useDarkMode();
+  const { t } = useI18n();
   const [users, setUsers] = useState([]);
   const [experts, setExperts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -107,26 +124,26 @@ export default function Users() {
       );
 
       if (response.ok) {
-        alert('User updated successfully');
+        alert(t('users.updateSuccess'));
         setIsEditModalOpen(false);
         fetchUsers();
       } else {
         const errorData = await response.json();
-        alert(`Failed to update user: ${errorData.error || 'Unknown error'}`);
+        alert(`${t('users.updateFailed')}: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error updating user:', error);
-      alert('Failed to update user');
+      alert(t('users.updateFailed'));
     }
   };
 
   const handleDelete = async (userId) => {
     if (currentUser?.role !== 'admin') {
-      alert('Only administrators can delete users');
+      alert(t('users.onlyAdminDelete'));
       return;
     }
 
-    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+    if (!confirm(t('users.confirmDelete'))) {
       return;
     }
 
@@ -143,15 +160,15 @@ export default function Users() {
       );
 
       if (response.ok) {
-        alert('User deleted successfully');
+        alert(t('users.deleteSuccess'));
         fetchUsers();
       } else {
         const errorData = await response.json();
-        alert(`Failed to delete user: ${errorData.error || 'Unknown error'}`);
+        alert(`${t('users.deleteFailed')}: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error deleting user:', error);
-      alert('Failed to delete user');
+      alert(t('users.deleteFailed'));
     }
   };
 
@@ -174,117 +191,91 @@ export default function Users() {
 
   const getRoleLabel = (role) => {
     switch (role) {
-      case 'admin': return 'Admin';
-      case 'expert': return 'Expert';
-      case 'patient': return 'Patient';
+      case 'admin': return t('users.admin');
+      case 'expert': return t('users.expert');
+      case 'patient': return t('users.patient');
       default: return role;
     }
   };
 
   const getExpertName = (expertId) => {
-    if (!expertId) return '-';
+    if (!expertId) return t('users.noExpert');
     const expert = users.find(u => u.id === expertId);
     return expert ? expert.name : `Expert #${expertId}`;
   };
 
   if (loading) {
     return (
-      <div className={`flex items-center justify-center h-64 ${isDark ? 'bg-gray-900' : ''}`}>
+      <div className={`flex items-center justify-center h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   const isAdmin = currentUser?.role === 'admin';
+  const totalPatients = users.filter(u => u.role === 'patient').length;
+  const totalExperts = users.filter(u => u.role === 'expert').length;
+  const totalAdmins = users.filter(u => u.role === 'admin').length;
 
   return (
-    <div className={`flex-1 p-8 overflow-auto min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Users</h1>
-            <p className={`mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Manage system users and assignments</p>
-          </div>
-        </div>
+    <div className={`p-8 min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="mb-8">
+        <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+          {t('users.title')}
+        </h1>
+        <p className={`mt-1 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+          {t('users.manageTitle')}
+        </p>
+      </div>
 
-        {/* Role Info Banner */}
-        {!isAdmin && (
-          <div className={`border rounded-lg p-4 ${isDark ? 'bg-blue-900/30 border-blue-700' : 'bg-blue-50 border-blue-200'}`}>
-            <p className={`text-sm ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>
-              <strong>Expert View:</strong> You can view and edit user information but cannot delete users.
-            </p>
-          </div>
-        )}
+      {/* Stats Grid */}
+      <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title={t('users.totalUsers')}
+          value={users.length}
+          subtitle={`${t('users.all')} ${t('users.role')}`}
+          isDark={isDark}
+        />
+        <StatCard
+          title={t('users.patients')}
+          value={totalPatients}
+          isDark={isDark}
+        />
+        <StatCard
+          title={t('users.experts')}
+          value={totalExperts}
+          isDark={isDark}
+        />
+        <StatCard
+          title={t('users.admins')}
+          value={totalAdmins}
+          isDark={isDark}
+        />
+      </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Total Users</p>
-                <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{users.length}</p>
-              </div>
-              <User className={`h-8 w-8 ${isDark ? 'text-gray-400' : 'text-gray-600'}`} />
-            </div>
-          </div>
-          <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Patients</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {users.filter(u => u.role === 'patient').length}
-                </p>
-              </div>
-              <User className="h-8 w-8 text-green-600" />
-            </div>
-          </div>
-          <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Experts</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {users.filter(u => u.role === 'expert').length}
-                </p>
-              </div>
-              <User className="h-8 w-8 text-blue-600" />
-            </div>
-          </div>
-          <div className={`rounded-lg shadow p-6 ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Admins</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  {users.filter(u => u.role === 'admin').length}
-                </p>
-              </div>
-              <User className="h-8 w-8 text-purple-600" />
-            </div>
-          </div>
-        </div>
-
-        {/* Users List */}
-        <div className={`rounded-lg shadow overflow-hidden ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+      {/* Users Table */}
+      <div className={`rounded-lg shadow overflow-hidden ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+        <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
               <tr>
-                <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
-                  User
+                <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                  {t('users.name')}
                 </th>
-                <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
-                  Role
+                <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                  {t('users.role')}
                 </th>
-                <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
-                  Contact
+                <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                  {t('users.phone')}
                 </th>
-                <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
-                  Hospital
+                <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                  {t('users.hospital')}
                 </th>
-                <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
-                  Assigned Expert
+                <th className={`px-6 py-3 text-left text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                  {t('users.assignedExpert')}
                 </th>
-                <th className={`px-6 py-3 text-right text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
-                  Actions
+                <th className={`px-6 py-3 text-right text-xs font-medium uppercase ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                  {t('users.actions')}
                 </th>
               </tr>
             </thead>
@@ -297,13 +288,13 @@ export default function Users() {
                         <User className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
-                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{user.name}</p>
-                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{user.email}</p>
+                        <p className={`font-medium text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>{user.name}</p>
+                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{user.email}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRoleBadgeColor(user.role)}`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
                       {getRoleLabel(user.role)}
                     </span>
                   </td>
@@ -312,13 +303,13 @@ export default function Users() {
                       {user.phoneNumber && (
                         <div className={`flex items-center gap-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                           <Phone className="w-4 h-4" />
-                          {user.phoneNumber}
+                          <span className="text-xs">{user.phoneNumber}</span>
                         </div>
                       )}
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <div className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                       {user.hospital && (
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4" />
@@ -327,7 +318,7 @@ export default function Users() {
                       )}
                     </div>
                   </td>
-                  <td className={`px-6 py-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <td className={`px-6 py-4 text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                     {getExpertName(user.assignedExpertId)}
                   </td>
                   <td className="px-6 py-4">
@@ -335,24 +326,24 @@ export default function Users() {
                       <button
                         onClick={() => handleMessageUser(user)}
                         className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
-                        title="Send message"
+                        title={t('users.sendMessage')}
                       >
-                        <MessageSquare className="w-5 h-5" />
+                        <MessageSquare className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleEditClick(user)}
                         className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                        title="Edit user"
+                        title={t('users.editUser')}
                       >
-                        <Edit className="w-5 h-5" />
+                        <Edit className="w-4 h-4" />
                       </button>
                       {isAdmin && (
                         <button
                           onClick={() => handleDelete(user.id)}
                           className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                          title="Delete user"
+                          title={t('users.deleteUser')}
                         >
-                          <Trash2 className="w-5 h-5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       )}
                     </div>
@@ -362,127 +353,127 @@ export default function Users() {
             </tbody>
           </table>
         </div>
+      </div>
 
-        {/* Edit Modal */}
-        {isEditModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className={`rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-              <div className={`p-6 border-b flex items-center justify-between ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-                <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Edit User</h2>
-                <button
-                  onClick={() => setIsEditModalOpen(false)}
-                  className={`p-2 rounded-lg ${isDark ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
-                >
-                  <X className="w-6 h-6" />
-                </button>
+      {/* Edit Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className={`rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+            <div className={`p-6 border-b flex items-center justify-between ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('users.editUser')}</h2>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className={`p-2 rounded-lg ${isDark ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  {t('users.name')} *
+                </label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm ${
+                    isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
+                  }`}
+                />
               </div>
 
-              <div className="p-6 space-y-4">
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  {t('users.email')} ({t('common.view')})
+                </label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  disabled
+                  className={`w-full px-4 py-2 border rounded-lg cursor-not-allowed text-sm ${
+                    isDark ? 'bg-gray-900 border-gray-600 text-gray-500' : 'bg-gray-50 border-gray-300'
+                  }`}
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  {t('users.phoneNumber')}
+                </label>
+                <input
+                  type="text"
+                  value={editForm.phoneNumber}
+                  onChange={(e) => setEditForm({ ...editForm, phoneNumber: e.target.value })}
+                  placeholder="+1234567890"
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm ${
+                    isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'
+                  }`}
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  {t('users.hospital')}
+                </label>
+                <input
+                  type="text"
+                  value={editForm.hospital}
+                  onChange={(e) => setEditForm({ ...editForm, hospital: e.target.value })}
+                  placeholder={t('users.hospital')}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm ${
+                    isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'
+                  }`}
+                />
+              </div>
+
+              {selectedUser?.role === 'patient' && (
                 <div>
                   <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Name *
+                    {t('users.assignedExpert')}
                   </label>
-                  <input
-                    type="text"
-                    value={editForm.name}
-                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent ${
+                  <select
+                    value={editForm.assignedExpertId}
+                    onChange={(e) => setEditForm({ ...editForm, assignedExpertId: e.target.value })}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm ${
                       isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
                     }`}
-                  />
+                  >
+                    <option value="">{t('users.noExpert')}</option>
+                    {experts.map(expert => (
+                      <option key={expert.id} value={expert.id}>
+                        {expert.name} ({expert.email})
+                      </option>
+                    ))}
+                  </select>
+                  <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                    {t('users.selectExpert')}
+                  </p>
                 </div>
+              )}
+            </div>
 
-                <div>
-                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Email (Read-only)
-                  </label>
-                  <input
-                    type="email"
-                    value={editForm.email}
-                    disabled
-                    className={`w-full px-4 py-2 border rounded-lg cursor-not-allowed ${
-                      isDark ? 'bg-gray-900 border-gray-600 text-gray-500' : 'bg-gray-50 border-gray-300'
-                    }`}
-                  />
-                </div>
-
-                <div>
-                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Phone Number
-                  </label>
-                  <input
-                    type="text"
-                    value={editForm.phoneNumber}
-                    onChange={(e) => setEditForm({ ...editForm, phoneNumber: e.target.value })}
-                    placeholder="+1234567890"
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent ${
-                      isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'
-                    }`}
-                  />
-                </div>
-
-                <div>
-                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Hospital
-                  </label>
-                  <input
-                    type="text"
-                    value={editForm.hospital}
-                    onChange={(e) => setEditForm({ ...editForm, hospital: e.target.value })}
-                    placeholder="Hospital name"
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent ${
-                      isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'
-                    }`}
-                  />
-                </div>
-
-                {selectedUser?.role === 'patient' && (
-                  <div>
-                    <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                      Assign Expert
-                    </label>
-                    <select
-                      value={editForm.assignedExpertId}
-                      onChange={(e) => setEditForm({ ...editForm, assignedExpertId: e.target.value })}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent ${
-                        isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value="">No expert assigned</option>
-                      {experts.map(expert => (
-                        <option key={expert.id} value={expert.id}>
-                          {expert.name} ({expert.email})
-                        </option>
-                      ))}
-                    </select>
-                    <p className={`text-sm mt-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                      Select an expert to assign to this patient
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div className={`p-6 border-t flex items-center justify-end gap-3 ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-                <button
-                  onClick={() => setIsEditModalOpen(false)}
-                  className={`px-6 py-2 border rounded-lg transition-colors ${
-                    isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveEdit}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                >
-                  <Save className="w-5 h-5" />
-                  Save Changes
-                </button>
-              </div>
+            <div className={`p-6 border-t flex items-center justify-end gap-3 ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className={`px-4 py-2 border rounded-lg transition-colors text-sm font-medium ${
+                  isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm font-medium"
+              >
+                <Save className="w-4 h-4" />
+                {t('common.save')}
+              </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
